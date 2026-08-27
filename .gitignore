@@ -36,6 +36,20 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local-only CLI auth token — never commit
+.supabase-token
+
+# local agent/session state
+.claude/
+
+# raw source data (contains facilitator PII: phone/email/address) — never commit
+/source-data/
+
+# editor/OS
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
