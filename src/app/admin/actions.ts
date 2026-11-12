@@ -74,10 +74,11 @@ async function requireAdmin() {
 }
 
 const facilitatorSchema = z.object({
-  full_name: z.string().trim().min(2, "Name is required"),
+  full_name: z.string().trim().min(2, "Please enter the facilitator’s full name."),
   status_code: z.string().trim().nullable(),
   location: z.string().trim().nullable(),
   mobile: z.string().trim().nullable(),
+  // Plain text: existing records hold notes like "DO NOT CONTACT" here.
   email: z.string().trim().nullable(),
   street_address: z.string().trim().nullable(),
   certification_info: z.string().trim().nullable(),
@@ -109,10 +110,49 @@ function readFacilitatorForm(formData: FormData) {
     short_bio: (formData.get("short_bio") as string) || null,
     is_public: formData.get("is_public") === "on",
   };
-  return facilitatorSchema.parse(raw);
+  return raw;
 }
 
 export type FormState = { error?: string; success?: boolean } | undefined;
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const PHOTO_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+class UserError extends Error {}
+
+/** Refresh every page that shows facilitator data. */
+function revalidateFacilitatorPages(id?: string) {
+  revalidatePath("/admin", "layout");
+  if (id) revalidatePath(`/admin/facilitators/${id}`);
+  revalidatePath("/", "layout");
+}
+
+/** Slugs must be unique; add -2, -3… when a name is already taken. */
+async function uniqueSlug(name: string, excludeId?: string) {
+  const supabase = await createClient();
+  const base = slugify(name) || "facilitator";
+  const { data } = await supabase
+    .from("facilitators")
+    .select("id, slug")
+    .like("slug", `${base}%`);
+  const taken = new Set(
+    (data ?? []).filter((r) => r.id !== excludeId).map((r) => r.slug),
+  );
+  if (!taken.has(base)) return base;
+  for (let n = 2; ; n++) {
+    if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+  }
+}
+
+function errorMessage(err: unknown) {
+  if (err instanceof UserError) return err.message;
+  console.error(err);
+  return "Something went wrong while saving. Please try again.";
+}
 
 export async function createFacilitatorAction(
   _prevState: FormState,
@@ -120,26 +160,27 @@ export async function createFacilitatorAction(
 ): Promise<FormState> {
   await requireAdmin();
 
-  let parsed;
-  try {
-    parsed = readFacilitatorForm(formData);
-  } catch {
-    return { error: "Please check the form fields and try again." };
+  const parsed = facilitatorSchema.safeParse(readFacilitatorForm(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please check the form fields." };
   }
 
-  const photoPath = await handlePhotoUpload(formData);
+  let createdId: string;
+  try {
+    const photoPath = await handlePhotoUpload(formData);
+    const input: FacilitatorInput = {
+      ...parsed.data,
+      slug: await uniqueSlug(parsed.data.full_name),
+      legacy_no: null,
+      photo_path: photoPath,
+    };
+    createdId = (await adminCreateFacilitator(input)).id;
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
 
-  const input: FacilitatorInput = {
-    ...parsed,
-    slug: slugify(parsed.full_name),
-    legacy_no: null,
-    photo_path: photoPath,
-  };
-
-  const created = await adminCreateFacilitator(input);
-  revalidatePath("/admin/facilitators");
-  revalidatePath("/facilitators");
-  redirect(`/admin/facilitators/${created.id}`);
+  revalidateFacilitatorPages(createdId);
+  redirect(`/admin/facilitators/${createdId}?created=1`);
 }
 
 export async function updateFacilitatorAction(
@@ -149,31 +190,37 @@ export async function updateFacilitatorAction(
 ): Promise<FormState> {
   await requireAdmin();
 
-  let parsed;
-  try {
-    parsed = readFacilitatorForm(formData);
-  } catch {
-    return { error: "Please check the form fields and try again." };
+  const parsed = facilitatorSchema.safeParse(readFacilitatorForm(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please check the form fields." };
   }
 
-  const photoPath = await handlePhotoUpload(formData);
+  try {
+    const photoPath = await handlePhotoUpload(formData);
+    const removePhoto = formData.get("remove_photo") === "on";
+    await adminUpdateFacilitator(id, {
+      ...parsed.data,
+      ...(photoPath ? { photo_path: photoPath } : removePhoto ? { photo_path: null } : {}),
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
 
-  await adminUpdateFacilitator(id, {
-    ...parsed,
-    ...(photoPath ? { photo_path: photoPath } : {}),
-  });
-
-  revalidatePath("/admin/facilitators");
-  revalidatePath(`/admin/facilitators/${id}`);
-  revalidatePath("/facilitators");
+  revalidateFacilitatorPages(id);
   return { success: true };
+}
+
+/** One-click show/hide from the facilitators table. */
+export async function setVisibilityAction(id: string, isPublic: boolean) {
+  await requireAdmin();
+  await adminUpdateFacilitator(id, { is_public: isPublic });
+  revalidateFacilitatorPages(id);
 }
 
 export async function deleteFacilitatorAction(id: string) {
   await requireAdmin();
   await adminDeleteFacilitator(id);
-  revalidatePath("/admin/facilitators");
-  revalidatePath("/facilitators");
+  revalidateFacilitatorPages();
   redirect("/admin/facilitators");
 }
 
@@ -181,14 +228,16 @@ async function handlePhotoUpload(formData: FormData): Promise<string | null> {
   const file = formData.get("photo");
   if (!(file instanceof File) || file.size === 0) return null;
 
-  const supabase = await createClient();
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${crypto.randomUUID()}.${ext}`;
+  const ext = PHOTO_TYPES[file.type];
+  if (!ext) throw new UserError("Photo must be a JPG, PNG or WebP image.");
+  if (file.size > MAX_PHOTO_BYTES) throw new UserError("Photo must be 5 MB or smaller.");
 
+  const supabase = await createClient();
+  const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from("facilitator-photos")
     .upload(path, file, { contentType: file.type, upsert: false });
 
-  if (error) throw error;
+  if (error) throw new UserError(`Photo upload failed: ${error.message}`);
   return path;
 }

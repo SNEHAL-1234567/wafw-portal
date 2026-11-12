@@ -25,7 +25,7 @@ export function LoginForm({ next }: { next: string }) {
           type="email"
           required
           autoComplete="username"
-          className="mt-1.5 w-full rounded-lg border border-brand-ink/15 bg-white px-3.5 py-2.5 text-sm text-brand-ink focus:border-brand-red focus:outline-none focus:ring-1 focus:ring-brand-red"
+          className="mt-1.5 w-full rounded-md border border-brand-line bg-white px-3.5 py-2.5 text-sm text-brand-ink focus:border-brand-red focus:outline-none focus:ring-1 focus:ring-brand-red"
         />
       </div>
       <div>
@@ -41,7 +41,7 @@ export function LoginForm({ next }: { next: string }) {
           type="password"
           required
           autoComplete="current-password"
-          className="mt-1.5 w-full rounded-lg border border-brand-ink/15 bg-white px-3.5 py-2.5 text-sm text-brand-ink focus:border-brand-red focus:outline-none focus:ring-1 focus:ring-brand-red"
+          className="mt-1.5 w-full rounded-md border border-brand-line bg-white px-3.5 py-2.5 text-sm text-brand-ink focus:border-brand-red focus:outline-none focus:ring-1 focus:ring-brand-red"
         />
       </div>
 
@@ -54,7 +54,7 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-brand-red px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="w-full rounded-md bg-brand-red px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-red-dark disabled:opacity-60"
       >
         {pending ? "Signing in..." : "Sign in"}
       </button>

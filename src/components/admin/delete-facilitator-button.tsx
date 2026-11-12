@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { adminButton } from "@/components/admin/page-header";
 
 export function DeleteFacilitatorButton({
   action,
@@ -13,15 +14,16 @@ export function DeleteFacilitatorButton({
     <form
       action={action}
       onSubmit={(e) => {
-        if (!confirm(`Delete ${name}? This can't be undone.`)) {
+        if (
+          !confirm(
+            `Permanently delete ${name}? This removes the record for good.\n\nTip: to just remove them from the website, untick "Visible on the public website" instead.`,
+          )
+        ) {
           e.preventDefault();
         }
       }}
     >
-      <button
-        type="submit"
-        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-brand-red-dark hover:bg-red-50"
-      >
+      <button type="submit" className={adminButton.danger}>
         <Trash2 size={15} /> Delete
       </button>
     </form>

@@ -1,32 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fffaf3;
-  --foreground: #201a15;
+  --background: #ffffff;
+  --foreground: #1f1a17;
 
-  --color-brand-cream: #fffaf3;
-  --color-brand-paper: #fff3e2;
-  --color-brand-ink: #201a15;
-  --color-brand-charcoal: #2b241e;
-  --color-brand-gold: #f2a91d;
-  --color-brand-amber: #fbc94c;
-  --color-brand-red: #d92b3c;
-  --color-brand-red-dark: #a81f2c;
+  /* WAFW brand — solid colours taken from the logo */
+  --color-brand-red: #c8202f;
+  --color-brand-red-dark: #a3192a;
+  --color-brand-gold: #e8a317;
+  --color-brand-amber: #f4c04e;
+  --color-brand-ink: #1f1a17;
+  --color-brand-charcoal: #2a2420;
+  --color-brand-night: #1c1714;
+  --color-brand-sand: #f7f4ef;
+  --color-brand-cream: #fbf9f6;
+  --color-brand-paper: #f2ede5;
+  --color-brand-line: #e6dfd5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-brand-cream: var(--color-brand-cream);
-  --color-brand-paper: var(--color-brand-paper);
-  --color-brand-ink: var(--color-brand-ink);
-  --color-brand-charcoal: var(--color-brand-charcoal);
-  --color-brand-gold: var(--color-brand-gold);
-  --color-brand-amber: var(--color-brand-amber);
   --color-brand-red: var(--color-brand-red);
   --color-brand-red-dark: var(--color-brand-red-dark);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-amber: var(--color-brand-amber);
+  --color-brand-ink: var(--color-brand-ink);
+  --color-brand-charcoal: var(--color-brand-charcoal);
+  --color-brand-night: var(--color-brand-night);
+  --color-brand-sand: var(--color-brand-sand);
+  --color-brand-cream: var(--color-brand-cream);
+  --color-brand-paper: var(--color-brand-paper);
+  --color-brand-line: var(--color-brand-line);
+  /* One typeface for the whole site (admin's font-serif maps here too). */
   --font-sans: var(--font-body);
-  --font-serif: var(--font-display);
+  --font-serif: var(--font-body);
+}
+
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -35,16 +48,18 @@ body {
 }
 
 @layer utilities {
-  .brand-gradient {
-    background: linear-gradient(
-      120deg,
-      var(--color-brand-gold) 0%,
-      var(--color-brand-amber) 45%,
-      var(--color-brand-red) 100%
-    );
-  }
-
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

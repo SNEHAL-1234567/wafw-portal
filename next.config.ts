@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  // Keep the old /program URL working after renaming it to match wafw.org.
+  redirects() {
+    return [{ source: "/program", destination: "/our-program", permanent: true }];
+  },
   images: {
     remotePatterns: [
       {

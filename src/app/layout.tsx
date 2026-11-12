@@ -1,34 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
+import { Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
+const publicSans = Public_Sans({
   variable: "--font-body",
   subsets: ["latin"],
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-display",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  metadataBase: new URL("https://wafw.example.org"),
+  metadataBase: new URL("https://wafw-portal.vercel.app"),
   title: {
     default: "World Academy for the Future of Women",
     template: "%s | World Academy for the Future of Women",
   },
   description:
-    "WAFW promotes and accelerates the advancement of women in leadership worldwide through an eight-module program delivered by trained volunteer facilitators.",
+    "Developing university women for global leadership through purpose, action, and service.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${playfair.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-brand-cream text-brand-ink">
+    <html lang="en" className={`${publicSans.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-white font-sans text-brand-ink">
         {children}
       </body>
     </html>

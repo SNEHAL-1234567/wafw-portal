@@ -24,10 +24,10 @@ export default async function AdminDashboardLayout({
   if (!admin) redirect("/admin/login");
 
   return (
-    <div className="flex min-h-screen bg-brand-paper">
+    <div className="flex min-h-screen flex-col bg-brand-sand lg:flex-row">
       <AdminSidebar email={user.email ?? ""} />
-      <main className="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
-        {children}
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-6xl">{children}</div>
       </main>
     </div>
   );
